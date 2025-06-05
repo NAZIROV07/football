@@ -1,32 +1,23 @@
-import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
-from aiogram.enums import ChatType
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.filters import BaseFilter
+from aiogram.enums import ParseMode
+import asyncio
+import os
 
-API_TOKEN = '7790903467:AAGSnh4euRb2iItn1MsmWKRqavuqNj62i2U'
-SOURCE_CHANNEL_ID = -1002879419379  # ID канала-источника
-TARGET_CHANNEL_ID = -1002727712840  # ID канала-приёмника
+TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_FROM = int(os.getenv("CHANNEL_FROM"))
+CHANNEL_TO = int(os.getenv("CHANNEL_TO"))
 
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher()
 
-# Фильтр: только сообщения из нужного канала
-class SourceChannelFilter(BaseFilter):
-    async def __call__(self, message: Message) -> bool:
-        return message.chat.id == SOURCE_CHANNEL_ID
-
-@dp.channel_post(SourceChannelFilter())
-async def forward_channel_post(message: Message):
-    await bot.copy_message(
-        chat_id=TARGET_CHANNEL_ID,
-        from_chat_id=message.chat.id,
-        message_id=message.message_id
-    )
+@dp.channel_post()
+async def repost(message: Message):
+    if message.chat.id == CHANNEL_FROM:
+        await bot.copy_message(chat_id=CHANNEL_TO, from_chat_id=CHANNEL_FROM, message_id=message.message_id)
 
 async def main():
     await dp.start_polling(bot)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
